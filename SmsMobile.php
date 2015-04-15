@@ -22,12 +22,19 @@
  * @author Maurizio Cingolani <mauriziocingolani74@gmail.com>
  * @version 1.0
  */
+require_once 'SmsMobileException.php';
+
 class SmsMobile extends CApplicationComponent {
 
     const URL = 'http://sms.smsmobile-ba.com/sms';
     const CREDIT_MODE_CREDIT = 'credit';
     const CREDIT_MODE_LOW_QUALITY_MESSAGES = 'll';
     const CREDIT_MODE_HIGH_QUALITY_MESSAGES = 'a';
+    const QUALITY_LOW = 'll';
+    const QUALITY_AUTO = 'a';
+    const QUALITY_NOTIFY = 'n';
+    const OPERATION_TEXT = 'TEXT';
+    const OPERATION_MULTITEXT = 'MULTITEXT';
 
     public $username;
     public $password;
@@ -49,8 +56,21 @@ class SmsMobile extends CApplicationComponent {
         );
     }
 
-    public function send() {
-        
+    public function send($rcpt, $data, $sender) {
+        $output = $this->_post('send', array(
+            'rcpt' => $rcpt,
+            'data' => $data,
+            'sender' => $sender,
+            'qty' => self::QUALITY_NOTIFY,
+            'operation' => strlen($data) > 160 ? self::OPERATION_MULTITEXT : self::OPERATION_TEXT,
+            'return_id' => 1,
+        ));
+        switch (substr($output, 0, 2)) :
+            case 'OK':
+                return substr($output, 2); # id del sms
+            case 'KO':
+                throw new SmsMobileException(substr($output, 2));
+        endswitch;
     }
 
     public function credit($mode = self::CREDIT_MODE_CREDIT) {
@@ -58,13 +78,53 @@ class SmsMobile extends CApplicationComponent {
         switch (substr($output, 0, 2)) :
             case 'OK':
                 if ($mode == self::CREDIT_MODE_CREDIT) :
-                    return (float) substr($output, 2);
+                    return (float) substr($output, 2); # credito o sms rimanenti
                 else :
                     return (int) substr($output, 2);
-                endif;
-                break;
+            endif;
             case 'KO':
-                return $output;
+                throw new SmsMobileException(substr($output, 2));
+        endswitch;
+    }
+
+    public function batchStatus($id) {
+        $output = $this->_post('batch-status', array(
+            'id' => $id,
+            'type' => 'notify',
+            'schema' => 1,
+        ));
+        switch (substr($output, 0, 2)) :
+            case 'OK':
+                CVarDumper::dump($output, 10, true);
+                return true;
+            case 'KO':
+                throw new SmsMobileException(substr($output, 2));
+        endswitch;
+    }
+
+    public function batchStatusInterval($start, $end) {
+        $output = $this->_post('batch-status-interval', array(
+            'from' => $start,
+            'to' => $end,
+            'type' => 'notify',
+            'schema' => 1,
+        ));
+        switch (substr($output, 0, 2)) :
+            case 'KO':
+                throw new SmsMobileException(substr($output, 2));
+            default:
+//                $splt = preg_split('/[\r\n]/', $output);
+//                $headers = preg_split('/,/', array_shift($splt));
+//                $data = new CList;
+//                foreach ($splt as $line) :
+//                    $d = preg_split('/,/', array_shift($splt));
+//                    $o = new stdClass();
+//                    for ($i = 0, $n = count($d); $i < $n; $i++) :
+//$o
+//                    endfor;
+//                endforeach;
+                CVarDumper::dump($output, 10, true);
+                return true;
         endswitch;
     }
 
