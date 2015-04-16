@@ -22,7 +22,6 @@
  * @author Maurizio Cingolani <mauriziocingolani74@gmail.com>
  * @version 1.0
  */
-require_once 'SmsMobileException.php';
 
 class SmsMobile extends CApplicationComponent {
 
@@ -38,6 +37,7 @@ class SmsMobile extends CApplicationComponent {
 
     public $username;
     public $password;
+    public $sender;
     private static $_config;
 
     public function init() {
@@ -67,7 +67,7 @@ class SmsMobile extends CApplicationComponent {
         ));
         switch (substr($output, 0, 2)) :
             case 'OK':
-                return substr($output, 2); # id del sms
+                return substr($output, 3); # id del sms
             case 'KO':
                 throw new SmsMobileException(substr($output, 2));
         endswitch;
@@ -80,7 +80,7 @@ class SmsMobile extends CApplicationComponent {
                 if ($mode == self::CREDIT_MODE_CREDIT) :
                     return (float) substr($output, 2); # credito o sms rimanenti
                 else :
-                    return (int) substr($output, 2);
+                    return (int) substr($output, 3);
             endif;
             case 'KO':
                 throw new SmsMobileException(substr($output, 2));
@@ -94,11 +94,12 @@ class SmsMobile extends CApplicationComponent {
             'schema' => 1,
         ));
         switch (substr($output, 0, 2)) :
-            case 'OK':
-                CVarDumper::dump($output, 10, true);
-                return true;
             case 'KO':
                 throw new SmsMobileException(substr($output, 2));
+            default:
+                $lines = preg_split("/[\r\n]/", $output);
+                $data = preg_split('/[,]/', $lines[1]);
+                return new SmsInfo($data);
         endswitch;
     }
 
