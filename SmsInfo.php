@@ -9,11 +9,15 @@ class SmsInfo extends CComponent {
     public $status_text;
 
     public function __construct(array $data) {
-        $this->id = $data[0];
-        $this->timestamp = strtotime($data[1]);
-        $this->dest = $data[2];
-        $this->status = $data[3];
-        $this->status_text = $data[4];
+        $this->id = isset($data[0]) ? $data[0] : 'N/A';
+        $this->timestamp = isset($data[1]) ? strtotime($data[1]) : 0;
+        $this->dest = isset($data[2]) ? $data[2] : 'N/A';
+        $this->status = isset($data[3]) ? $data[3] : 'N/A';
+        $this->status_text = isset($data[4]) ? $data[4] : 'N/A';
+    }
+
+    public function getStatustext() {
+        return "$this->status_text ($this->status)";
     }
 
 }

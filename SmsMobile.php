@@ -22,7 +22,6 @@
  * @author Maurizio Cingolani <mauriziocingolani74@gmail.com>
  * @version 1.0
  */
-
 class SmsMobile extends CApplicationComponent {
 
     const URL = 'http://sms.smsmobile-ba.com/sms';
